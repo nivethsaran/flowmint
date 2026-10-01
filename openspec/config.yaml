@@ -4,12 +4,27 @@ githubCopilot:
 
 # Project context (optional)
 # This is shown to AI when creating artifacts.
-# Add your tech stack, conventions, style guides, domain knowledge, etc.
-# Example:
-#   context: |
-#     Tech stack: TypeScript, React, Node.js
-#     We use conventional commits
-#     Domain: e-commerce platform
+context: |
+  Flowmint is a local-first, single-user personal finance app. Trusted devices push raw
+  financial notifications (bank SMS, app notifications); the backend stores them first, then
+  extracts structured transactions asynchronously; a Next.js dashboard shows the results.
+
+  Tech stack:
+  - Backend: Java / Spring Boot 3 (Spring Security, Spring Data JPA, validation, actuator),
+    Maven, package root com.flowmint, feature packages (auth, events, transactions).
+  - Database: Supabase-hosted PostgreSQL over TLS; schema via Flyway migrations in
+    backend/src/main/resources/db/migration; Hibernate ddl-auto=validate.
+  - Frontend: Next.js 15 App Router, React 19, TypeScript, CSS modules, installable PWA.
+  - Runtime: Docker Compose; backend is private to the Compose network, frontend bound to
+    127.0.0.1:3000 and proxies to the backend via route handlers (FLOWMINT_API_URL).
+
+  Conventions:
+  - Backend APIs live under /api/v1/*; browser-facing proxies under frontend/app/api/*.
+  - Error bodies are JSON {"error": CODE, "message": text}.
+  - Configuration via environment variables; app-specific ones are prefixed FLOWMINT_.
+  - Never log raw event bodies; amounts default to INR.
+  - Extraction goes through the LlmClient interface so the deterministic
+    LocalFinanceExtractor can be swapped for an LLM adapter (llama.cpp) later.
 
 # Per-artifact rules (optional)
 # Add custom rules for specific artifacts.

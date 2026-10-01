@@ -2,6 +2,7 @@ package com.flowmint.auth;
 
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.HttpSession;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -41,7 +42,9 @@ public class AuthController {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of("error", "INVALID_CREDENTIALS", "message", "Invalid credentials"));
         }
         rateLimiter.clear(key);
-        servletRequest.changeSessionId();
+        HttpSession existingSession = servletRequest.getSession(false);
+        if (existingSession != null) existingSession.invalidate();
+        servletRequest.getSession(true);
         Authentication authentication = authService.authentication();
         SecurityContext context = SecurityContextHolder.createEmptyContext();
         context.setAuthentication(authentication);
