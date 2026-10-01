@@ -29,8 +29,20 @@ management:
       exposure:
         include: health,info
 app:
+  timezone: ${FLOWMINT_TIMEZONE:Asia/Kolkata}
   device-token: ${APP_DEVICE_TOKEN}
   auth:
     username: ${FLOWMINT_AUTH_USERNAME}
     password: ${FLOWMINT_AUTH_PASSWORD}
     totp-secret: ${FLOWMINT_TOTP_SECRET}
+  llm:
+    base-url: ${FLOWMINT_LLM_BASE_URL}
+    api-key: ${FLOWMINT_LLM_API_KEY}
+    model: ${FLOWMINT_LLM_MODEL:default}
+    timeout: 120s
+    max-tokens: 400
+    max-attempts: 5
+    retry-delays: 1m,5m,15m,60m
+    review-confidence-threshold: 0.7
+    claim-timeout: 5m
+    queue-capacity: 500

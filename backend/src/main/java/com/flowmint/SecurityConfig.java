@@ -49,7 +49,7 @@ public class SecurityConfig {
             .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED))
             .exceptionHandling(errors -> errors.authenticationEntryPoint(authenticationEntryPoint()).accessDeniedHandler(accessDeniedHandler()))
             .authorizeHttpRequests(auth -> auth
-                .requestMatchers("/actuator/health", "/actuator/info", "/api/v1/auth/csrf", "/api/v1/auth/login").permitAll()
+                .requestMatchers("/error", "/actuator/health", "/actuator/info", "/api/v1/auth/csrf", "/api/v1/auth/login").permitAll()
                 .anyRequest().authenticated())
             .addFilterBefore(bearer, UsernamePasswordAuthenticationFilter.class);
         return http.build();
