@@ -1,6 +1,6 @@
 # Flowmint
 
-Flowmint is a local-first personal finance command center. It accepts sensitive Iris events, stores the raw event before processing, extracts a structured transaction asynchronously, and presents deterministic financial data in a mobile-friendly Next.js PWA surface.
+Flowmint is a local-first personal finance command center. It accepts sensitive Flowmint events, stores the raw event before processing, extracts a structured transaction asynchronously, and presents deterministic financial data in a mobile-friendly Next.js PWA surface.
 
 ## Run locally
 
@@ -11,9 +11,9 @@ docker compose up --build
 
 Open http://localhost:3000. The backend is private to the Docker network; its health endpoint is not published to the host.
 
-### Iris Web UI authentication
+### Flowmint Web UI authentication
 
-Set `IRIS_AUTH_USERNAME`, `IRIS_AUTH_PASSWORD`, and a Base32 `IRIS_TOTP_SECRET` in `.env`. The browser signs in at `/login` with all three values. Spring Boot creates the server-side session and the Next.js proxy forwards authenticated requests over the private Docker network. The session cookie is HttpOnly, SameSite=Lax, and expires after eight hours.
+Set `FLOWMINT_AUTH_USERNAME`, `FLOWMINT_AUTH_PASSWORD`, and a Base32 `FLOWMINT_TOTP_SECRET` in `.env`. The browser signs in at `/login` with all three values. Spring Boot creates the server-side session and the Next.js proxy forwards authenticated requests over the private Docker network. The session cookie is HttpOnly, SameSite=Lax, and expires after eight hours.
 
 The login endpoint is browser-facing through Next.js at `POST /api/auth/login`; the Spring endpoint is internal at `POST /api/v1/auth/login`. Failed logins are rate-limited and return the same generic error regardless of which credential failed.
 
@@ -32,7 +32,7 @@ Keep `.env` out of Git. Docker Compose refuses to start when the Supabase databa
 Send a device event:
 
 ```bash
-curl -X POST http://localhost:3000/api/iris/events \
+curl -X POST http://localhost:3000/api/flowmint/events \
   -H 'Authorization: Bearer dev-device-token-change-me' \
   -H 'Content-Type: application/json' \
   -d '{"source":"sms","sender":"HDFC-BANK","body":"INR 1299.00 debited from A/c XX1234 at AMAZON on 01-10-2026. Avl Bal INR 45,000.00","timestamp":"2026-10-01T09:00:00Z","deviceId":"device-001"}'

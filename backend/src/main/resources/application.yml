@@ -31,6 +31,6 @@ management:
 app:
   device-token: ${APP_DEVICE_TOKEN}
   auth:
-    username: ${IRIS_AUTH_USERNAME}
-    password: ${IRIS_AUTH_PASSWORD}
-    totp-secret: ${IRIS_TOTP_SECRET}
+    username: ${FLOWMINT_AUTH_USERNAME}
+    password: ${FLOWMINT_AUTH_PASSWORD}
+    totp-secret: ${FLOWMINT_TOTP_SECRET}

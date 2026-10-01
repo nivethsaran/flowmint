@@ -99,7 +99,7 @@ public class SecurityConfig {
         protected void doFilterInternal(@NonNull HttpServletRequest request, @NonNull HttpServletResponse response, @NonNull FilterChain chain) throws ServletException, IOException {
             String header = request.getHeader(AUTHORIZATION);
             if (header != null && header.startsWith("Bearer ") && MessageDigest.isEqual(header.substring(7).getBytes(StandardCharsets.UTF_8), configuredToken.getBytes(StandardCharsets.UTF_8))) {
-                var auth = new org.springframework.security.authentication.UsernamePasswordAuthenticationToken("iris-device", null, List.of());
+                var auth = new org.springframework.security.authentication.UsernamePasswordAuthenticationToken("flowmint-device", null, List.of());
                 org.springframework.security.core.context.SecurityContextHolder.getContext().setAuthentication(auth);
             }
             chain.doFilter(request, response);
