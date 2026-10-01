@@ -1,16 +1,15 @@
 import { NextResponse } from "next/server";
 
-export async function GET() {
+export async function GET(request: Request) {
   const backendUrl = process.env.FLOWMINT_API_URL;
-  const deviceToken = process.env.FLOWMINT_DEVICE_TOKEN;
 
-  if (!backendUrl || !deviceToken) {
+  if (!backendUrl) {
     return NextResponse.json({ code: "CONFIGURATION_ERROR", message: "Flowmint proxy is not configured" }, { status: 500 });
   }
 
   try {
     const response = await fetch(`${backendUrl}/api/v1/transactions`, {
-      headers: { Authorization: `Bearer ${deviceToken}` },
+      headers: request.headers.get("cookie") ? { Cookie: request.headers.get("cookie")! } : {},
       cache: "no-store"
     });
     const body = await response.text();

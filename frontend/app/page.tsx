@@ -16,6 +16,10 @@ export default function Home() {
   useEffect(() => {
     fetch("/api/transactions")
       .then((response) => {
+        if (response.status === 401) {
+          window.location.assign("/login");
+          throw new Error("session-expired");
+        }
         if (!response.ok) {
           throw new Error(`Transaction request failed: ${response.status}`);
         }
@@ -30,7 +34,7 @@ export default function Home() {
   const categories = transactions.reduce<Record<string, number>>((result, transaction) => { result[transaction.category] = (result[transaction.category] ?? 0) + transaction.amount; return result; }, {});
   return <main className="shell">
     <aside className="sidebar"><div className="brand"><span className="brand-mark">F</span><span>flowmint</span></div><p className="eyebrow">Finance OS</p><nav><a className="active" href="#overview">Overview</a><a href="#transactions">Transactions</a><a href="#insights">Analytics</a><a href="#budgets">Budgets</a><a href="#recurring">Recurring</a><a href="#accounts">Accounts</a></nav><div className="privacy"><span className="status-dot" />Live data<br /><small>Connected to Flowmint API</small></div></aside>
-    <section className="content"><header className="topbar"><div><p className="eyebrow">Thursday, 01 October 2026</p><h1>Good morning, <em>you.</em></h1></div><button className="command" type="button">⌘ K <span>Search anything</span></button><button className="avatar" type="button" aria-label="Open profile">N</button></header>
+    <section className="content"><header className="topbar"><div><p className="eyebrow">Thursday, 01 October 2026</p><h1>Good morning, <em>you.</em></h1></div><button className="command" type="button">⌘ K <span>Search anything</span></button><button className="avatar" type="button" aria-label="Sign out" onClick={async () => { await fetch("/api/auth/logout", { method: "POST", headers: { "X-XSRF-TOKEN": document.cookie.split("; ").find((cookie) => cookie.startsWith("XSRF-TOKEN="))?.split("=")[1] ?? "" } }); window.location.assign("/login"); }}>N</button></header>
       <div className="range-row"><div><span className="eyebrow">Overview</span><h2>Your money, in focus.</h2></div><div className="ranges">{["7D", "30D", "3M", "6M", "1Y"].map((option) => <button className={range === option ? "selected" : ""} onClick={() => setRange(option)} key={option}>{option}</button>)}</div></div>
       {loadState === "error" && <div className={`${styles.dataState} ${styles.errorState}`}><strong>Flowmint API unavailable</strong><span>Start the backend and refresh to load your financial data.</span></div>}
       {loadState === "loading" && <div className={styles.dataState}><strong>Connecting to Flowmint</strong><span>Loading transactions from the backend...</span></div>}
