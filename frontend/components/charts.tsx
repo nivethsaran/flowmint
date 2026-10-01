@@ -32,12 +32,13 @@ function niceTicks(min: number, max: number, count = 4): number[] {
   return ticks;
 }
 
-/** Tiny trend line for metric cards. Draws nothing for fewer than two points. */
+/** Tiny trend line for metric cards. Draws nothing when there is no trend to show. */
 export function Sparkline({ values, color = SERIES_COLORS.net, label }: { values: number[]; color?: string; label: string }) {
   const id = useId();
   if (values.length < 2) return null;
   const min = Math.min(...values);
   const max = Math.max(...values);
+  if (min === max) return null;
   const span = max - min || 1;
   const points = values.map((v, i) => [(i / (values.length - 1)) * 100, 36 - ((v - min) / span) * 32]);
   const line = points.map(([x, y], i) => `${i ? "L" : "M"}${x.toFixed(2)},${y.toFixed(2)}`).join("");
