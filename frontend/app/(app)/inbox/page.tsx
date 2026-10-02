@@ -9,7 +9,7 @@ import { api, ApiError, query } from "@/lib/api";
 import { KIND_LABELS, STATUS_LABELS } from "@/lib/categories";
 import { ago, dateTime, plural } from "@/lib/format";
 import { notifyDataChanged, useApi, useDataChanged } from "@/lib/useApi";
-import type { EventStats, InboxItem, Page, ProcessingStatus } from "@/lib/types";
+import type { EventFeedback, EventStats, InboxItem, Page, ProcessingStatus } from "@/lib/types";
 
 export default function InboxPage() {
   return <Suspense><Inbox /></Suspense>;
@@ -88,7 +88,7 @@ function Inbox() {
   return (
     <>
       <div className="page-head">
-        <div><span className="eyebrow">Inbox</span><h2>Every message, explained.</h2><p>Everything your device forwarded and what Flowmint did with it.</p></div>
+        <div><span className="eyebrow">Inbox</span><h2>Every message, explained.</h2><p>Mark false positives, missed transactions, or incorrect tags to guide future classifications.</p></div>
         <div className="page-actions">
           <button className="btn" disabled={bulkBusy} onClick={() => bulk("RULES")} title="Read transactions that the fallback rules extracted again with the AI. Edited transactions are kept.">
             <Icon name="sparkle" />Re-extract rule-based
@@ -123,7 +123,7 @@ function Inbox() {
             <div style={{ opacity: list.loading ? 0.7 : 1 }}>
               {data.items.map((item) => (
                 <InboxRow key={item.id} item={item} expanded={expanded === item.id} onToggle={() => setExpanded(expanded === item.id ? null : item.id)}
-                  onReprocessed={(message, tone) => { showToast(message, tone); if (!tone) notifyDataChanged(); }} />
+                  onActionComplete={(message, tone) => { showToast(message, tone); if (!tone) notifyDataChanged(); }} />
               ))}
             </div>
           )}
@@ -142,7 +142,7 @@ function Inbox() {
   );
 }
 
-function InboxRow({ item, expanded, onToggle, onReprocessed }: { item: InboxItem; expanded: boolean; onToggle: () => void; onReprocessed: (message: string, tone?: "error") => void }) {
+function InboxRow({ item, expanded, onToggle, onActionComplete }: { item: InboxItem; expanded: boolean; onToggle: () => void; onActionComplete: (message: string, tone?: "error") => void }) {
   const drawer = useTransactionDrawer();
   const detail = useApi<InboxItem>(expanded ? `/events/${item.id}` : null);
   const [busy, setBusy] = useState(false);
@@ -152,13 +152,31 @@ function InboxRow({ item, expanded, onToggle, onReprocessed }: { item: InboxItem
     setBusy(true);
     try {
       await api.post(`/events/${item.id}/reprocess`);
-      onReprocessed("Queued — the message will be read again in a moment");
+      onActionComplete("Queued — the message will be read again in a moment");
     } catch (error) {
       if (error instanceof ApiError && error.status === 409) {
-        onReprocessed("You edited the transaction from this message, so it's kept as is and not re-read.", "error");
+        onActionComplete("You edited or corrected the transaction from this message, so it's kept as is and not re-read.", "error");
       } else {
-        onReprocessed(error instanceof ApiError ? error.message : "Could not reprocess", "error");
+        onActionComplete(error instanceof ApiError ? error.message : "Could not reprocess", "error");
       }
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function markFeedback(feedback: EventFeedback) {
+    setBusy(true);
+    try {
+      await api.post<void>(`/events/${item.id}/feedback`, { feedback });
+      if (feedback === "INCORRECT_TAG" && item.transactionId) drawer.open(item.transactionId);
+      const message = feedback === "FALSE_POSITIVE"
+        ? "Marked as a false positive and removed from spending"
+        : feedback === "FALSE_NEGATIVE"
+          ? "Marked as a false negative — Flowmint is reading it again"
+          : "Marked as incorrectly tagged — fix the transaction to teach future classifications";
+      onActionComplete(message);
+    } catch (error) {
+      onActionComplete(error instanceof ApiError ? error.message : "Could not save feedback", "error");
     } finally {
       setBusy(false);
     }
@@ -172,6 +190,7 @@ function InboxRow({ item, expanded, onToggle, onReprocessed }: { item: InboxItem
           {item.kind && <Badge>{KIND_LABELS[item.kind] ?? item.kind}</Badge>}
           <Badge tone={STATUS_TONES[item.status]}>{STATUS_LABELS[item.status]}</Badge>
           {item.transactionId && <Badge tone="good">Transaction</Badge>}
+          {item.feedback && <Badge tone="warn">Feedback saved</Badge>}
         </span>
         <span className="tx-meta" title={dateTime(item.receivedAt)}>{ago(item.receivedAt)}</span>
         <span className="inbox-preview">{item.preview}</span>
@@ -185,9 +204,13 @@ function InboxRow({ item, expanded, onToggle, onReprocessed }: { item: InboxItem
             <dt>Received</dt><dd>{dateTime(item.receivedAt)}</dd>
             <dt>Attempts</dt><dd>{item.attempts}{item.status === "RETRY" && item.nextAttemptAt ? ` · next try ${dateTime(item.nextAttemptAt)}` : ""}</dd>
             {item.lastError && <><dt>Last error</dt><dd className="bad">{item.lastError}</dd></>}
+            {item.feedback && <><dt>Feedback</dt><dd>{item.feedback === "FALSE_POSITIVE" ? "False positive" : item.feedback === "FALSE_NEGATIVE" ? "False negative" : "Incorrect tag"}</dd></>}
           </dl>
           <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-            {item.transactionId && <button className="btn small primary" onClick={() => drawer.open(item.transactionId!)}>Open transaction</button>}
+            {item.transactionId && item.feedback !== "INCORRECT_TAG" && <button className="btn small" disabled={busy} onClick={() => markFeedback("INCORRECT_TAG")} title="Mark the extraction as wrong, then correct its details to improve future classifications"><Icon name="edit" />Incorrect tag</button>}
+            {item.transactionId && <button className="btn small primary" onClick={() => drawer.open(item.transactionId!)}>{item.feedback === "INCORRECT_TAG" ? "Edit corrected transaction" : "Open transaction"}</button>}
+            {item.transactionId && <button className="btn small danger" disabled={busy} onClick={() => markFeedback("FALSE_POSITIVE")}><Icon name="close" />False positive</button>}
+            {item.status === "IGNORED" && <button className="btn small primary" disabled={busy} onClick={() => markFeedback("FALSE_NEGATIVE")} title="Confirm that money moved; Flowmint will extract this message again"><Icon name="check" />False negative</button>}
             <button className="btn small" disabled={busy || pending} onClick={reprocess} title={pending ? "Already being read" : "Read this message again"}>
               <Icon name="refresh" />{pending ? "Processing…" : "Reprocess"}
             </button>

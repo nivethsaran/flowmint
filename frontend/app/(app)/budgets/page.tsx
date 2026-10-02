@@ -71,7 +71,7 @@ function Budgets() {
 
       <article className="panel" style={{ marginBottom: 14 }}>
         <div className="panel-head">
-          <div><span className="eyebrow">Overall</span><h3>All spending</h3><div className="sub">Expenses and cash withdrawals, minus refunds</div></div>
+          <div><span className="eyebrow">Overall</span><h3>All spending</h3><div className="sub">Includes investment contributions, minus refunds</div></div>
           {b?.total && <BudgetActions onEdit={() => setEditing({ category: "TOTAL", amount: String(b.total!.limit), isNew: false })} onDelete={() => remove("TOTAL")} />}
         </div>
         {!b ? <div className="stack"><Skeleton height={28} width="40%" /><Skeleton height={8} /></div>

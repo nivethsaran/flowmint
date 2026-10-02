@@ -44,7 +44,7 @@ export function category(key: string): CategoryInfo {
   return BY_KEY.get(key) ?? { key, label: key, kind: "SPENDING", color: C.slate };
 }
 
-export const SPENDING_CATEGORIES = CATEGORIES.filter((c) => c.kind === "SPENDING");
+export const SPENDING_CATEGORIES = CATEGORIES.filter((c) => c.kind === "SPENDING" || c.kind === "INVESTMENT");
 
 /** Neutral color for "Other categories" slices. */
 export const OTHER_SLICE_COLOR = "#56615a";

@@ -47,4 +47,7 @@ public interface RawEventRepository extends JpaRepository<RawEvent, UUID>, JpaSp
 
     @Query("select e.processingStatus, count(e) from RawEvent e group by e.processingStatus")
     List<Object[]> countByStatus();
+
+    @Query("select e from RawEvent e where e.userFeedback is not null and e.id <> :excludeId order by e.feedbackAt desc")
+    List<RawEvent> findRecentFeedback(UUID excludeId, Pageable page);
 }

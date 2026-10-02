@@ -55,6 +55,14 @@ public class EventController {
         return ResponseEntity.accepted().build();
     }
 
+    @PostMapping("/{id}/feedback")
+    public ResponseEntity<Void> feedback(@PathVariable UUID id, @Valid @RequestBody EventFeedbackRequest request) {
+        events.feedback(id, request.feedback());
+        return request.feedback() == EventFeedback.FALSE_NEGATIVE
+            ? ResponseEntity.accepted().build()
+            : ResponseEntity.noContent().build();
+    }
+
     @PostMapping("/reprocess")
     public ResponseEntity<Map<String, Integer>> reprocessAll(@RequestParam EventService.ReprocessScope scope) {
         return ResponseEntity.accepted().body(Map.of("scheduled", events.reprocess(scope)));

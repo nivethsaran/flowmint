@@ -3,6 +3,7 @@ package com.flowmint.analytics;
 import com.flowmint.analytics.AnalyticsSummary.*;
 import com.flowmint.common.ApiException;
 import com.flowmint.transactions.Category;
+import com.flowmint.transactions.TransactionDirection;
 import com.flowmint.transactions.TransactionRepository;
 import com.flowmint.transactions.TransactionType;
 import org.springframework.stereotype.Service;
@@ -103,11 +104,12 @@ public class AnalyticsService {
             series, categories, topMerchants, accountAmounts, reviewCount);
     }
 
-    /** Contribution to spending: expenses and cash add, refunds subtract, everything else is neutral. */
+    /** Contribution to spending: expenses, cash, and investment debits add; credits and refunds subtract. */
     private static BigDecimal signedSpending(AnalyticsRow row) {
         return switch (row.type()) {
             case EXPENSE, CASH_WITHDRAWAL -> row.amount();
             case REFUND -> row.amount().negate();
+            case INVESTMENT -> row.direction() == TransactionDirection.CREDIT ? row.amount().negate() : row.amount();
             default -> BigDecimal.ZERO;
         };
     }

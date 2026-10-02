@@ -5,6 +5,7 @@ export type ExtractionMethod = "LLM" | "RULES" | "MANUAL";
 export type AccountType = "BANK_ACCOUNT" | "CREDIT_CARD" | "WALLET" | "UNKNOWN";
 export type MessageKind = "TRANSACTION" | "OTP" | "PAYMENT_REQUEST" | "FAILED_TRANSACTION" | "BILL_REMINDER" | "BALANCE_ALERT" | "PROMOTIONAL" | "OTHER";
 export type ProcessingStatus = "RECEIVED" | "PROCESSING" | "RETRY" | "PROCESSED" | "FAILED" | "IGNORED";
+export type EventFeedback = "FALSE_POSITIVE" | "FALSE_NEGATIVE" | "INCORRECT_TAG";
 
 export type Page<T> = { items: T[]; page: number; size: number; totalItems: number; totalPages: number };
 
@@ -105,6 +106,7 @@ export type InboxItem = {
   lastError: string | null;
   nextAttemptAt: string | null;
   transactionId: string | null;
+  feedback: EventFeedback | null;
 };
 
 export type EventStats = Record<ProcessingStatus, number>;

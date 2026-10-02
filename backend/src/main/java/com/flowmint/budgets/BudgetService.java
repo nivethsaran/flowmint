@@ -96,6 +96,8 @@ public class BudgetService {
         if (TOTAL.equals(key)) return;
         Category category;
         try { category = Category.valueOf(key); } catch (IllegalArgumentException e) { throw ApiException.validation("category", "Unknown category"); }
-        if (category.kind() != Category.Kind.SPENDING) throw ApiException.validation("category", category.label() + " is not a spending category");
+        if (category.kind() != Category.Kind.SPENDING && category.kind() != Category.Kind.INVESTMENT) {
+            throw ApiException.validation("category", category.label() + " is not a spending category");
+        }
     }
 }

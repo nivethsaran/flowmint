@@ -70,7 +70,7 @@ function Analytics() {
       <section className="grid-2" style={{ marginBottom: 14 }}>
         <article className="panel">
           <div className="panel-head">
-            <div><span className="eyebrow">Categories</span><h3>Where the money went</h3><div className="sub">Expenses and cash, with change vs previous period</div></div>
+            <div><span className="eyebrow">Categories</span><h3>Where the money went</h3><div className="sub">Expenses, cash, and investments, with change vs previous period</div></div>
           </div>
           {!s ? <SkeletonRows rows={5} />
             : s.categories.length === 0 ? <EmptyState icon="budgets" title="No spending yet" />

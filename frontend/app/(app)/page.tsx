@@ -78,7 +78,7 @@ function Overview() {
 
       <section className="metrics" aria-label="Key figures">
         <MetricCard feature label="Net cash flow" loading={!totals} value={totals && money(totals.netCashFlow)}
-          foot={totals && previous && <><Delta current={totals.netCashFlow} previous={previous.netCashFlow} increaseIsGood /> <span>income − spending − invested</span></>}>
+          foot={totals && previous && <><Delta current={totals.netCashFlow} previous={previous.netCashFlow} increaseIsGood /> <span>income − spending (incl. investments)</span></>}>
           {summary.data && <Sparkline values={summary.data.series.map((p) => p.income - p.spending)} label="Net cash flow trend" />}
         </MetricCard>
         <MetricCard label="Income" loading={!totals} value={totals && money(totals.income)}
@@ -96,7 +96,7 @@ function Overview() {
             <Link className="link" href={`/analytics?range=${range}`}>View analytics →</Link>
           </div>
           {!summary.data ? <div className="donut-wrap"><Skeleton width={168} height={168} style={{ borderRadius: "50%", flex: "none" }} /><div style={{ flex: 1 }}><SkeletonRows rows={3} /></div></div>
-            : slices.length === 0 ? <EmptyState icon="budgets" title="No spending in this period">Expenses and cash withdrawals will be broken down by category here.</EmptyState>
+            : slices.length === 0 ? <EmptyState icon="budgets" title="No spending in this period">Expenses, cash withdrawals, and investments will be broken down by category here.</EmptyState>
             : <Donut slices={slices} total={grossSpending} centerLabel="spent" />}
         </article>
 

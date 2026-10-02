@@ -35,11 +35,11 @@ class AnalyticsServiceTest {
         ).forEach(totals::add);
 
         assertThat(totals.income()).isEqualByComparingTo("100000");
-        assertThat(totals.spending()).isEqualByComparingTo("2700");
+        assertThat(totals.spending()).isEqualByComparingTo("7700");
         assertThat(totals.refunds()).isEqualByComparingTo("300");
         assertThat(totals.invested()).isEqualByComparingTo("5000");
         assertThat(totals.netCashFlow()).isEqualByComparingTo("92300");
-        assertThat(totals.savingsRate()).isEqualByComparingTo("0.973");
+        assertThat(totals.savingsRate()).isEqualByComparingTo("0.923");
     }
 
     @Test

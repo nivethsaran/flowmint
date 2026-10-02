@@ -25,6 +25,8 @@ public class RawEvent {
     @Column(name = "last_processing_error") private String lastProcessingError;
     @Enumerated(EnumType.STRING) @Column(name = "message_kind") private MessageKind messageKind;
     @Column(name = "classification_reason") private String classificationReason;
+    @Enumerated(EnumType.STRING) @Column(name = "user_feedback") private EventFeedback userFeedback;
+    @Column(name = "feedback_at") private Instant feedbackAt;
     @Column(name = "next_attempt_at") private Instant nextAttemptAt;
     @Column(name = "locked_until") private Instant lockedUntil;
 
@@ -46,6 +48,8 @@ public class RawEvent {
     public String getLastProcessingError() { return lastProcessingError; }
     public MessageKind getMessageKind() { return messageKind; }
     public String getClassificationReason() { return classificationReason; }
+    public EventFeedback getUserFeedback() { return userFeedback; }
+    public Instant getFeedbackAt() { return feedbackAt; }
     public Instant getNextAttemptAt() { return nextAttemptAt; }
 
     /** Body and title together: the text an extraction is allowed to draw numbers and digits from. */
@@ -53,6 +57,7 @@ public class RawEvent {
 
     public void markProcessed(MessageKind kind, String reason) { finish(ProcessingStatus.PROCESSED, kind, reason); lastProcessingError = null; }
     public void markIgnored(MessageKind kind, String reason) { finish(ProcessingStatus.IGNORED, kind, reason); lastProcessingError = null; }
+    public void recordFeedback(EventFeedback feedback) { userFeedback = feedback; feedbackAt = Instant.now(); }
     public void markRetry(String error, Instant nextAttempt) { processingStatus = ProcessingStatus.RETRY; lastProcessingError = truncate(error, MAX_ERROR); nextAttemptAt = nextAttempt; lockedUntil = null; }
     public void markFailed(String error) { finish(ProcessingStatus.FAILED, messageKind, classificationReason); lastProcessingError = truncate(error, MAX_ERROR); }
     public void resetForReprocessing() {

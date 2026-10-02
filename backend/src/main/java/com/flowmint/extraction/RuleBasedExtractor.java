@@ -21,9 +21,11 @@ import java.util.regex.Pattern;
 public class RuleBasedExtractor {
     private static final Pattern AMOUNT = Pattern.compile("(?:INR|RS\\.?|₹)\\s*([0-9][0-9,]*(?:\\.[0-9]{1,2})?)", Pattern.CASE_INSENSITIVE);
     private static final Pattern DEBIT = Pattern.compile("\\b(debited|spent|paid|sent|purchase|withdrawn|charged)\\b", Pattern.CASE_INSENSITIVE);
+    private static final Pattern SCHEDULED_DEBIT = Pattern.compile("\\b(?:will be debited|scheduled to be debited|will be charged)\\b", Pattern.CASE_INSENSITIVE);
+    private static final Pattern EXECUTED_MANDATE = Pattern.compile("\\bmandate\\b.{0,240}\\bsuccessfully executed\\b", Pattern.CASE_INSENSITIVE | Pattern.DOTALL);
     private static final Pattern CREDIT = Pattern.compile("\\b(credited|received|refund(?:ed)?|deposited)\\b", Pattern.CASE_INSENSITIVE);
     private static final Pattern LAST4 = Pattern.compile("(?:[x*]{2,}|ending\\s*(?:in|with)?\\s*|no\\.?\\s*)(\\d{4})\\b", Pattern.CASE_INSENSITIVE);
-    private static final Pattern MERCHANT = Pattern.compile("\\b(?:at|to|towards|from)\\s+(?:vpa\\s+)?([A-Za-z][A-Za-z0-9&.'@ -]{1,40}?)(?=\\s+(?:on|via|ref|upi|for|using|thru|through)\\b|[.,;(]|$)", Pattern.CASE_INSENSITIVE | Pattern.MULTILINE);
+    private static final Pattern MERCHANT = Pattern.compile("\\b(?:at|to|towards|from|against)\\s+(?:vpa\\s+)?([A-Za-z][A-Za-z0-9&.'@ -]{1,40}?)(?=\\s+(?:on|via|ref|upi|for|using|thru|through)\\b|[.,;(]|$)", Pattern.CASE_INSENSITIVE | Pattern.MULTILINE);
     private static final Pattern FAILED = Pattern.compile("\\b(failed|declined|unsuccessful|could not be processed|will not be debited)\\b", Pattern.CASE_INSENSITIVE);
     private static final Pattern REQUEST = Pattern.compile("\\b(has requested|collect request|requested (?:money|payment|rs|inr))\\b", Pattern.CASE_INSENSITIVE);
     private static final Pattern DATE = Pattern.compile("\\b(\\d{1,2})[-/](\\d{1,2})[-/](\\d{2}|\\d{4})\\b");
@@ -36,13 +38,16 @@ public class RuleBasedExtractor {
         // A failed payment or a request moved no money; recording it would invent spending.
         if (FAILED.matcher(text).find()) return ExtractionResult.ignored(MessageKind.FAILED_TRANSACTION, "Payment failed or was declined (rule-based fallback)");
         if (REQUEST.matcher(text).find()) return ExtractionResult.ignored(MessageKind.PAYMENT_REQUEST, "Payment request, not a payment (rule-based fallback)");
+        // Future tense is not evidence that a debit has already happened.
+        if (SCHEDULED_DEBIT.matcher(text).find()) return ExtractionResult.ignored(MessageKind.BILL_REMINDER, "Debit is scheduled for a future date (rule-based fallback)");
 
         Matcher amountMatcher = AMOUNT.matcher(text);
         if (!amountMatcher.find()) return null;
         BigDecimal amount = new BigDecimal(amountMatcher.group(1).replace(",", ""));
         if (amount.signum() <= 0) return null;
 
-        boolean debit = DEBIT.matcher(text).find();
+        boolean executedMandate = EXECUTED_MANDATE.matcher(text).find();
+        boolean debit = DEBIT.matcher(text).find() || executedMandate;
         boolean credit = CREDIT.matcher(text).find();
         if (debit == credit) return null; // neither, or ambiguous
 

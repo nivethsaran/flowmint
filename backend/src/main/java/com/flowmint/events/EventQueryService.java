@@ -27,12 +27,12 @@ public class EventQueryService {
 
     /** {@code body} is only filled for single-message detail; lists carry {@code preview}. */
     public record Item(UUID id, String source, String sender, String packageName, String title, String preview, String body, Instant eventTimestamp, Instant receivedAt,
-                       ProcessingStatus status, MessageKind kind, String reason, int attempts, String lastError, Instant nextAttemptAt, UUID transactionId) {
+                       ProcessingStatus status, MessageKind kind, String reason, int attempts, String lastError, Instant nextAttemptAt, UUID transactionId, EventFeedback feedback) {
         static Item from(RawEvent e, UUID transactionId, boolean withBody) {
             String body = e.getBody() == null ? "" : e.getBody();
             String preview = body.length() <= PREVIEW_LENGTH ? body : body.substring(0, PREVIEW_LENGTH);
             return new Item(e.getId(), e.getSource(), e.getSender(), e.getPackageName(), e.getTitle(), preview, withBody ? body : null, e.getEventTimestamp(), e.getReceivedAt(),
-                e.getProcessingStatus(), e.getMessageKind(), e.getClassificationReason(), e.getProcessingAttempts(), e.getLastProcessingError(), e.getNextAttemptAt(), transactionId);
+                e.getProcessingStatus(), e.getMessageKind(), e.getClassificationReason(), e.getProcessingAttempts(), e.getLastProcessingError(), e.getNextAttemptAt(), transactionId, e.getUserFeedback());
         }
     }
 

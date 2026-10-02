@@ -38,6 +38,39 @@ public class EventService {
         if (!reset(event)) throw ApiException.conflict("TRANSACTION_EDITED", "The transaction from this message was edited and is kept as is");
     }
 
+    @Transactional
+    public void feedback(UUID eventId, EventFeedback feedback) {
+        RawEvent event = rawEvents.findById(eventId).orElseThrow(() -> ApiException.notFound("Event not found"));
+        Optional<Transaction> existing = transactions.findByExternalEventId(event.getExternalEventId());
+
+        switch (feedback) {
+            case FALSE_POSITIVE -> {
+                if (event.getProcessingStatus() != ProcessingStatus.PROCESSED || existing.isEmpty()) {
+                    throw ApiException.conflict("FEEDBACK_NOT_APPLICABLE", "Only a processed transaction can be marked as a false positive");
+                }
+                Transaction transaction = existing.get();
+                transactions.clearDuplicatesOf(transaction.getId());
+                transactions.delete(transaction);
+                event.markIgnored(MessageKind.OTHER, "Marked by user as not a completed transaction");
+                event.recordFeedback(feedback);
+            }
+            case FALSE_NEGATIVE -> {
+                if (event.getProcessingStatus() != ProcessingStatus.IGNORED || existing.isPresent()) {
+                    throw ApiException.conflict("FEEDBACK_NOT_APPLICABLE", "Only an ignored message can be marked as a missed transaction");
+                }
+                event.recordFeedback(feedback);
+                event.resetForReprocessing();
+                publisher.publishEvent(new RawEventAccepted(event.getId()));
+            }
+            case INCORRECT_TAG -> {
+                if (event.getProcessingStatus() != ProcessingStatus.PROCESSED || existing.isEmpty()) {
+                    throw ApiException.conflict("FEEDBACK_NOT_APPLICABLE", "Only a processed transaction can be marked as incorrectly tagged");
+                }
+                event.recordFeedback(feedback);
+            }
+        }
+    }
+
     /** Re-extracts every event in scope, skipping those whose transaction was edited. Returns how many were scheduled. */
     @Transactional
     public int reprocess(ReprocessScope scope) {
@@ -53,7 +86,7 @@ public class EventService {
     private boolean reset(RawEvent event) {
         Optional<Transaction> existing = transactions.findByExternalEventId(event.getExternalEventId());
         if (existing.isPresent()) {
-            if (existing.get().isUserEdited()) return false;
+            if (existing.get().isUserEdited() || event.getUserFeedback() == EventFeedback.INCORRECT_TAG) return false;
             transactions.clearDuplicatesOf(existing.get().getId());
             transactions.delete(existing.get());
         }
