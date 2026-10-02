@@ -35,7 +35,7 @@ public class ExtractionFeedbackContext {
     public String forEvent(RawEvent current) {
         List<String> lines = new ArrayList<>();
         if (current.getUserFeedback() == EventFeedback.FALSE_NEGATIVE) {
-            lines.add("Current-message correction: the user confirmed this previously ignored message reports a completed transaction. Classify it as TRANSACTION and extract only details supported by this message.");
+            lines.add("Current-message correction: the user confirmed this message reports a completed transaction. Classify it as TRANSACTION and extract only details supported by this message.");
         } else if (current.getUserFeedback() == EventFeedback.FALSE_POSITIVE) {
             lines.add("Current-message correction: the user marked this message as a false positive. Do not create a transaction from it.");
         }

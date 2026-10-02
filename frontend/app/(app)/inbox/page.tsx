@@ -170,7 +170,9 @@ function InboxRow({ item, expanded, onToggle, onActionComplete }: { item: InboxI
       await api.post<void>(`/events/${item.id}/feedback`, { feedback });
       if (feedback === "INCORRECT_TAG" && item.transactionId) drawer.open(item.transactionId);
       const message = feedback === "FALSE_POSITIVE"
-        ? "Marked as a false positive and removed from spending"
+        ? item.transactionId
+          ? "Marked as a false positive and removed from spending"
+          : "Marked as a false positive and moved to Ignored"
         : feedback === "FALSE_NEGATIVE"
           ? "Marked as a false negative — Flowmint is reading it again"
           : "Marked as incorrectly tagged — fix the transaction to teach future classifications";
@@ -210,7 +212,8 @@ function InboxRow({ item, expanded, onToggle, onActionComplete }: { item: InboxI
             {item.transactionId && item.feedback !== "INCORRECT_TAG" && <button className="btn small" disabled={busy} onClick={() => markFeedback("INCORRECT_TAG")} title="Mark the extraction as wrong, then correct its details to improve future classifications"><Icon name="edit" />Incorrect tag</button>}
             {item.transactionId && <button className="btn small primary" onClick={() => drawer.open(item.transactionId!)}>{item.feedback === "INCORRECT_TAG" ? "Edit corrected transaction" : "Open transaction"}</button>}
             {item.transactionId && <button className="btn small danger" disabled={busy} onClick={() => markFeedback("FALSE_POSITIVE")}><Icon name="close" />False positive</button>}
-            {item.status === "IGNORED" && <button className="btn small primary" disabled={busy} onClick={() => markFeedback("FALSE_NEGATIVE")} title="Confirm that money moved; Flowmint will extract this message again"><Icon name="check" />False negative</button>}
+            {item.status === "FAILED" && !item.transactionId && <button className="btn small danger" disabled={busy} onClick={() => markFeedback("FALSE_POSITIVE")} title="Confirm this failed message is not a completed transaction"><Icon name="close" />False positive</button>}
+            {(item.status === "IGNORED" || (item.status === "FAILED" && !item.transactionId)) && <button className="btn small primary" disabled={busy} onClick={() => markFeedback("FALSE_NEGATIVE")} title="Confirm that money moved; Flowmint will extract this message again"><Icon name="check" />False negative</button>}
             <button className="btn small" disabled={busy || pending} onClick={reprocess} title={pending ? "Already being read" : "Read this message again"}>
               <Icon name="refresh" />{pending ? "Processing…" : "Reprocess"}
             </button>

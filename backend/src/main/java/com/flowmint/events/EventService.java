@@ -45,18 +45,23 @@ public class EventService {
 
         switch (feedback) {
             case FALSE_POSITIVE -> {
-                if (event.getProcessingStatus() != ProcessingStatus.PROCESSED || existing.isEmpty()) {
-                    throw ApiException.conflict("FEEDBACK_NOT_APPLICABLE", "Only a processed transaction can be marked as a false positive");
+                boolean processedTransaction = event.getProcessingStatus() == ProcessingStatus.PROCESSED && existing.isPresent();
+                boolean failedWithoutTransaction = event.getProcessingStatus() == ProcessingStatus.FAILED && existing.isEmpty();
+                if (!processedTransaction && !failedWithoutTransaction) {
+                    throw ApiException.conflict("FEEDBACK_NOT_APPLICABLE", "Only a processed transaction or failed message can be marked as a false positive");
                 }
-                Transaction transaction = existing.get();
-                transactions.clearDuplicatesOf(transaction.getId());
-                transactions.delete(transaction);
+                existing.ifPresent(transaction -> {
+                    transactions.clearDuplicatesOf(transaction.getId());
+                    transactions.delete(transaction);
+                });
                 event.markIgnored(MessageKind.OTHER, "Marked by user as not a completed transaction");
                 event.recordFeedback(feedback);
             }
             case FALSE_NEGATIVE -> {
-                if (event.getProcessingStatus() != ProcessingStatus.IGNORED || existing.isPresent()) {
-                    throw ApiException.conflict("FEEDBACK_NOT_APPLICABLE", "Only an ignored message can be marked as a missed transaction");
+                boolean canConfirm = (event.getProcessingStatus() == ProcessingStatus.IGNORED || event.getProcessingStatus() == ProcessingStatus.FAILED)
+                    && existing.isEmpty();
+                if (!canConfirm) {
+                    throw ApiException.conflict("FEEDBACK_NOT_APPLICABLE", "Only an ignored or failed message without a transaction can be marked as a missed transaction");
                 }
                 event.recordFeedback(feedback);
                 event.resetForReprocessing();
